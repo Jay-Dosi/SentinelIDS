@@ -1,0 +1,19 @@
+{
+  "APACHE2": 0,
+  "BACKDOOR": 1,
+  "BENIGN": 2,
+  "BOTNET": 3,
+  "BRUTE_FORCE": 4,
+  "DDOS": 5,
+  "DOS": 6,
+  "EXPLOITS": 7,
+  "FUZZERS": 8,
+  "GENERIC": 9,
+  "INFILTRATION": 10,
+  "PORTSCAN": 11,
+  "SHELLCODE": 12,
+  "WEB_BRUTE_FORCE": 13,
+  "WEB_SQL_INJECTION": 14,
+  "WEB_XSS": 15,
+  "WORM": 16
+}

@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "rules": [
+    {"id":"SQL-001","name":"SQL Injection - UNION SELECT","pattern":"UNION SELECT","case_sensitive":false,"severity":"high","category":"sql_injection"},
+    {"id":"SQL-002","name":"SQL Injection - Boolean Bypass","pattern":"' OR 1=1","case_sensitive":false,"severity":"high","category":"sql_injection"},
+    {"id":"SQL-003","name":"SQL Injection - DROP TABLE","pattern":"DROP TABLE","case_sensitive":false,"severity":"critical","category":"sql_injection"},
+    {"id":"SQL-004","name":"SQL Injection - EXEC","pattern":"EXEC(","case_sensitive":false,"severity":"high","category":"sql_injection"},
+    {"id":"CMD-001","name":"Command Injection - /etc/passwd","pattern":"; cat /etc/passwd","case_sensitive":false,"severity":"critical","category":"command_injection"},
+    {"id":"CMD-002","name":"Command Injection - /bin/sh","pattern":"/bin/sh","case_sensitive":false,"severity":"critical","category":"command_injection"},
+    {"id":"CMD-003","name":"Command Injection - wget","pattern":"wget http","case_sensitive":false,"severity":"high","category":"command_injection"},
+    {"id":"CMD-004","name":"Command Injection - curl","pattern":"curl http","case_sensitive":false,"severity":"high","category":"command_injection"},
+    {"id":"XSS-001","name":"Cross-Site Scripting - script tag","pattern":"<script>","case_sensitive":false,"severity":"medium","category":"xss"},
+    {"id":"XSS-002","name":"Cross-Site Scripting - javascript:","pattern":"javascript:","case_sensitive":false,"severity":"medium","category":"xss"},
+    {"id":"TRAV-001","name":"Path Traversal","pattern":"../../../","case_sensitive":false,"severity":"high","category":"path_traversal"},
+    {"id":"SCAN-001","name":"Nmap Scan","pattern":"nmap","case_sensitive":false,"severity":"medium","category":"reconnaissance"},
+    {"id":"SHELL-001","name":"Reverse Shell - bash","pattern":"bash -i >& /dev/tcp","case_sensitive":false,"severity":"critical","category":"reverse_shell"},
+    {"id":"SHELL-002","name":"Reverse Shell - nc","pattern":"nc -e /bin/sh","case_sensitive":false,"severity":"critical","category":"reverse_shell"}
+  ]
+}

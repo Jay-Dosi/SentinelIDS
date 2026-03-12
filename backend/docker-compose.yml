@@ -1,0 +1,68 @@
+version: "3.9"
+services:
+  api:
+    build:
+      context: .
+      args:
+        TORCH_EXTRA_INDEX_URL: ${TORCH_EXTRA_INDEX_URL:-}
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://sentinel:sentinel@db:5432/sentinelids
+    volumes:
+      - ./models:/app/models
+      - ./datasets:/app/datasets
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  trainer:
+    profiles: ["train"]
+    build:
+      context: .
+      args:
+        TORCH_EXTRA_INDEX_URL: ${TORCH_EXTRA_INDEX_URL:-}
+    command: ["python", "training/training_pipeline.py"]
+    environment:
+      - DATASETS_DIR=/app/datasets
+      - MODELS_DIR=/app/models
+      - DATABASE_URL=postgresql://sentinel:sentinel@db:5432/sentinelids
+      - EPOCHS=${EPOCHS:-30}
+      - BATCH_SIZE=${BATCH_SIZE:-512}
+      - LEARNING_RATE=${LEARNING_RATE:-0.001}
+      - TEST_SPLIT=${TEST_SPLIT:-0.2}
+      - RANDOM_SEED=${RANDOM_SEED:-42}
+      - ANOMALY_THRESHOLD_PERCENTILE=${ANOMALY_THRESHOLD_PERCENTILE:-95}
+    volumes:
+      - ./models:/app/models
+      - ./datasets:/app/datasets
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: ["gpu"]
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel
+      POSTGRES_DB: sentinelids
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinelids"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "5432:5432"
+volumes:
+  pgdata:

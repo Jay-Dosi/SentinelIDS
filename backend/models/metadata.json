@@ -1,0 +1,68 @@
+{
+  "feature_names": [
+    "flow_duration",
+    "flow_iat_mean",
+    "flow_iat_std",
+    "packet_count",
+    "fwd_packets",
+    "bwd_packets",
+    "fwd_bwd_ratio",
+    "byte_count",
+    "fwd_bytes",
+    "bwd_bytes",
+    "flow_bytes_per_sec",
+    "flow_packets_per_sec",
+    "avg_packet_size",
+    "fwd_packet_size_mean",
+    "bwd_packet_size_mean",
+    "syn_flag_count",
+    "ack_flag_count",
+    "rst_flag_count",
+    "fin_flag_count",
+    "psh_flag_count",
+    "payload_length",
+    "payload_entropy",
+    "fwd_header_length",
+    "bwd_header_length"
+  ],
+  "num_features": 24,
+  "num_classes": 17,
+  "label_map": {
+    "APACHE2": 0,
+    "BACKDOOR": 1,
+    "BENIGN": 2,
+    "BOTNET": 3,
+    "BRUTE_FORCE": 4,
+    "DDOS": 5,
+    "DOS": 6,
+    "EXPLOITS": 7,
+    "FUZZERS": 8,
+    "GENERIC": 9,
+    "INFILTRATION": 10,
+    "PORTSCAN": 11,
+    "SHELLCODE": 12,
+    "WEB_BRUTE_FORCE": 13,
+    "WEB_SQL_INJECTION": 14,
+    "WEB_XSS": 15,
+    "WORM": 16
+  },
+  "anomaly_threshold": 0.003186437906697391,
+  "version": "1.0.0",
+  "classifier_metrics": {
+    "accuracy": 0.934097468948312
+  },
+  "autoencoder_metrics": {
+    "tpr": 0.3642924411400248,
+    "fpr": 0.049634557233143056,
+    "auc_roc": 0.8024194701539563,
+    "threshold": 0.003186437906697391
+  },
+  "training_config": {
+    "epochs": 60,
+    "batch_size": 1024,
+    "lr": 0.0005,
+    "focal_gamma": 1.5,
+    "benign_cap": 500000,
+    "min_class_samples": 200
+  }
+}
