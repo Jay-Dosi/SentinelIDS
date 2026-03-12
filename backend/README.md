@@ -79,3 +79,7 @@ Add/replace CSVs in `/datasets` then rerun `python training/training_pipeline.py
 
 ## builds and then trains
 docker compose --profile train up --build trainer
+
+##docker container stop commands: 
+docker compose --profile train down
+docker compose down
