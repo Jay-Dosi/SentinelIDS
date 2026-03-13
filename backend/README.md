@@ -83,3 +83,10 @@ docker compose --profile train up --build trainer
 ##docker container stop commands: 
 docker compose --profile train down
 docker compose down
+
+
+
+## retraining
+Remove-Item -Recurse -Force models\*
+docker compose --profile train build --no-cache trainer
+docker compose --profile train up trainer
