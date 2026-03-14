@@ -49,6 +49,6 @@ async def shutdown(): logger.info("Shutting down %s", settings.app_name)
 @app.exception_handler(Exception)
 async def exc_handler(request: Request, exc: Exception):
     logger.error("Unhandled: %s  path=%s", exc, request.url.path)
-    return JSONResponse(500, {"detail":"Internal server error","error":str(exc)})
+    return JSONResponse(status_code=500, content={"detail":"Internal server error","error":str(exc)})
 
 app.include_router(router)
