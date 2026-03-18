@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #070b10;
+  --bg-secondary: #0d1117;
+  --bg-card: #111820;
+  --accent-green: #00ff88;
+  --accent-green-dim: #00cc6a;
+  --accent-amber: #ffb800;
+  --accent-red: #ff3864;
+  --accent-blue: #00b4ff;
+  --border: #1e2d3d;
+  --text-primary: #e2e8f0;
+  --text-secondary: #7d9ab5;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: #1e2d3d; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #2a3f55; }
+
+/* Selection */
+::selection { background: rgba(0,255,136,0.2); color: #00ff88; }
+
+/* Leaflet dark theme overrides */
+.leaflet-container {
+  background: #070b10 !important;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+.leaflet-tile { filter: invert(1) hue-rotate(180deg) brightness(0.7) saturate(0.5); }
+.leaflet-control-zoom a { background: #111820 !important; color: #00ff88 !important; border-color: #1e2d3d !important; }
+
+@layer components {
+  .card {
+    @apply bg-bg-card border border-border rounded-lg shadow-card;
+  }
+  .btn-primary {
+    @apply bg-accent-green text-bg-primary font-mono font-bold px-4 py-2 rounded text-sm
+           hover:bg-accent-green-dim transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-accent-green focus:ring-offset-2 focus:ring-offset-bg-primary;
+  }
+  .btn-ghost {
+    @apply border border-border text-text-secondary font-mono text-sm px-4 py-2 rounded
+           hover:border-border-bright hover:text-text-primary transition-colors duration-200
+           focus:outline-none focus:ring-2 focus:ring-border focus:ring-offset-2 focus:ring-offset-bg-primary;
+  }
+  .label-green {
+    @apply font-mono text-xs text-accent-green uppercase tracking-widest;
+  }
+  .mono {
+    @apply font-mono;
+  }
+  .glow-green { text-shadow: 0 0 20px rgba(0,255,136,0.6); }
+  .glow-red { text-shadow: 0 0 20px rgba(255,56,100,0.6); }
+  .glow-amber { text-shadow: 0 0 20px rgba(255,184,0,0.6); }
+}

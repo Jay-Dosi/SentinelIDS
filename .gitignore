@@ -1,0 +1,46 @@
+# Datasets — too large for git
+backend/datasets/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# Environment
+.env
+backend/.env
+
+# Logs
+*.log
+backend/models/training.log
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+.dockerignore
+```
+
+---
+
+That's everything needed at the root. Your final structure should be:
+```
+SentinelIDS/
+├── docker-compose.yml   ← new
+├── README.md            ← new
+├── .gitignore           ← new
+├── backend/             ← existing
+└── frontend/            ← your existing or the sentinelui zip

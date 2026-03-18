@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel
+      POSTGRES_DB: sentinelids
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - sentinel_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinelids"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://sentinel:sentinel@db:5432/sentinelids
+      - MODELS_DIR=models
+    env_file: []
+    volumes:
+      - ./backend/models:/app/models
+      - ./backend/datasets:/app/datasets
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - sentinel_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - sentinel_net
+
+volumes:
+  pgdata:
+
+networks:
+  sentinel_net:
+    driver: bridge
