@@ -59,26 +59,53 @@ export default function BatchUpload() {
   })
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    const file = acceptedFiles[0]
-    if (!file) return
-    setFileName(file.name)
-    setResults([])
+  const file = acceptedFiles[0]
+  if (!file) return
+  setFileName(file.name)
+  setResults([])
 
+  if (file.name.endsWith('.json')) {
+    // Handle JSON upload
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const parsed = JSON.parse(e.target?.result as string)
+        // Support both array of records and {records: [...]} format
+        const records: Record<string, string>[] = Array.isArray(parsed)
+          ? parsed
+          : parsed.records ?? []
+        // Convert numbers to strings for unified processing
+        const stringified = records.map((r: any) =>
+          Object.fromEntries(Object.entries(r).map(([k, v]) => [k, String(v)]))
+        )
+        setCsvData(stringified.slice(0, 1000))
+        setColumns(stringified.length > 0 ? Object.keys(stringified[0]) : [])
+      } catch {
+        alert('Invalid JSON file — expected array of objects or {records: [...]}')
+      }
+    }
+    reader.readAsText(file)
+  } else {
+    // Existing CSV handling
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: (result) => {
         const rows = result.data as Record<string, string>[]
-        setCsvData(rows.slice(0, 1000)) // cap at 1000 rows
+        setCsvData(rows.slice(0, 1000))
         setColumns(result.meta.fields || [])
       },
     })
+  }
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { 'text/csv': ['.csv'] },
-    maxFiles: 1,
+  onDrop,
+  accept: {
+    'text/csv': ['.csv'],
+    'application/json': ['.json'],
+  },
+  maxFiles: 1,
   })
 
   const exportResults = () => {
@@ -139,7 +166,7 @@ export default function BatchUpload() {
           )}
         </div>
         <div className="font-mono text-xs text-text-muted mt-2">
-          Supports up to 1,000 rows — columns should match network flow features
+          CSV or JSON · up to 1,000 rows · columns must match network flow features
         </div>
       </div>
 

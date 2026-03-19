@@ -4,14 +4,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react'
+import { Send, RotateCcw, ChevronDown, ChevronUp, Upload } from 'lucide-react'
 import { api } from '@/api/client'
 import { useSettingsStore } from '@/store/settings'
 import PredictionCard from '@/components/PredictionCard/PredictionCard'
 import ThreatGauge from '@/components/ThreatGauge/ThreatGauge'
 import ExplainabilityPanel from '@/components/ExplainabilityPanel/ExplainabilityPanel'
 import type { TrafficFeatures, PredictionResponse } from '@/types'
-import { nanoid } from 'nanoid'
+import { clsx } from 'clsx'
 
 const featureSchema = z.object({
   flow_duration: z.coerce.number().min(0).optional(),
@@ -47,96 +47,75 @@ const PRESETS = {
     label: 'Normal Traffic',
     color: '#00ff9f',
     features: {
-      flow_duration: 0.5, flow_iat_mean: 0.1, flow_iat_std: 0.05,
-      packet_count: 10, fwd_packets: 6, bwd_packets: 4, fwd_bwd_ratio: 1.5,
-      byte_count: 1500, fwd_bytes: 900, bwd_bytes: 600,
-      flow_bytes_per_sec: 3000, flow_packets_per_sec: 20,
-      avg_packet_size: 150, fwd_packet_size_mean: 150, bwd_packet_size_mean: 150,
-      syn_flag_count: 1, ack_flag_count: 1, rst_flag_count: 0,
-      fin_flag_count: 0, psh_flag_count: 0,
-      payload_length: 900, payload_entropy: 0.5,
-      fwd_header_length: 20, bwd_header_length: 20,
+      flow_duration: 3500, flow_iat_mean: 120.3, flow_iat_std: 35.2,
+      packet_count: 42, fwd_packets: 21, bwd_packets: 21, fwd_bwd_ratio: 1.0,
+      byte_count: 6800, fwd_bytes: 3400, bwd_bytes: 3400,
+      flow_bytes_per_sec: 1942.86, flow_packets_per_sec: 12.0,
+      avg_packet_size: 162.0, fwd_packet_size_mean: 162.0, bwd_packet_size_mean: 162.0,
+      syn_flag_count: 1, ack_flag_count: 20, rst_flag_count: 0,
+      fin_flag_count: 1, psh_flag_count: 3,
+      payload_length: 3400, payload_entropy: 3.2,
+      fwd_header_length: 480, bwd_header_length: 440,
     },
   },
   ddos: {
     label: 'DDoS Attack',
     color: '#ff3b5c',
     features: {
-      flow_duration: 0.001, flow_iat_mean: 0.0001, flow_iat_std: 0.00001,
-      packet_count: 50000, fwd_packets: 49000, bwd_packets: 1000, fwd_bwd_ratio: 49,
+      flow_duration: 0.001, flow_iat_mean: 0.00005, flow_iat_std: 0.00001,
+      packet_count: 51000, fwd_packets: 50000, bwd_packets: 1000, fwd_bwd_ratio: 50.0,
       byte_count: 5000000, fwd_bytes: 4900000, bwd_bytes: 100000,
-      flow_bytes_per_sec: 999999999, flow_packets_per_sec: 999999999,
-      avg_packet_size: 100, fwd_packet_size_mean: 100, bwd_packet_size_mean: 100,
-      syn_flag_count: 49000, ack_flag_count: 0, rst_flag_count: 0,
+      flow_bytes_per_sec: 5000000000, flow_packets_per_sec: 51000000,
+      avg_packet_size: 98.0, fwd_packet_size_mean: 98.0, bwd_packet_size_mean: 100.0,
+      syn_flag_count: 50000, ack_flag_count: 0, rst_flag_count: 0,
       fin_flag_count: 0, psh_flag_count: 0,
       payload_length: 4900000, payload_entropy: 0.1,
-      fwd_header_length: 20, bwd_header_length: 20,
+      fwd_header_length: 1000000, bwd_header_length: 20000,
     },
   },
   scan: {
     label: 'Port Scan',
     color: '#00d4ff',
     features: {
-      flow_duration: 0.001, flow_iat_mean: 0.0005, flow_iat_std: 0.0001,
-      packet_count: 2, fwd_packets: 1, bwd_packets: 1, fwd_bwd_ratio: 1,
-      byte_count: 120, fwd_bytes: 60, bwd_bytes: 60,
-      flow_bytes_per_sec: 120000, flow_packets_per_sec: 2000,
-      avg_packet_size: 60, fwd_packet_size_mean: 60, bwd_packet_size_mean: 60,
+      flow_duration: 0.0005, flow_iat_mean: 0.0002, flow_iat_std: 0.00005,
+      packet_count: 1, fwd_packets: 1, bwd_packets: 0, fwd_bwd_ratio: 999.0,
+      byte_count: 40, fwd_bytes: 40, bwd_bytes: 0,
+      flow_bytes_per_sec: 80000, flow_packets_per_sec: 2000,
+      avg_packet_size: 40.0, fwd_packet_size_mean: 40.0, bwd_packet_size_mean: 0.0,
       syn_flag_count: 1, ack_flag_count: 0, rst_flag_count: 1,
       fin_flag_count: 0, psh_flag_count: 0,
       payload_length: 0, payload_entropy: 0,
-      fwd_header_length: 20, bwd_header_length: 20,
+      fwd_header_length: 20, bwd_header_length: 0,
     },
   },
 }
 
 const FEATURE_GROUPS = [
-  {
-    label: 'Flow Timing',
-    fields: ['flow_duration', 'flow_iat_mean', 'flow_iat_std'],
-  },
-  {
-    label: 'Packet Counts',
-    fields: ['packet_count', 'fwd_packets', 'bwd_packets', 'fwd_bwd_ratio'],
-  },
-  {
-    label: 'Byte Counts',
-    fields: ['byte_count', 'fwd_bytes', 'bwd_bytes'],
-  },
-  {
-    label: 'Flow Rates',
-    fields: ['flow_bytes_per_sec', 'flow_packets_per_sec'],
-  },
-  {
-    label: 'Packet Size',
-    fields: ['avg_packet_size', 'fwd_packet_size_mean', 'bwd_packet_size_mean'],
-  },
-  {
-    label: 'TCP Flags',
-    fields: ['syn_flag_count', 'ack_flag_count', 'rst_flag_count', 'fin_flag_count', 'psh_flag_count'],
-  },
-  {
-    label: 'Payload',
-    fields: ['payload_length', 'payload_entropy'],
-  },
-  {
-    label: 'Headers',
-    fields: ['fwd_header_length', 'bwd_header_length'],
-  },
+  { label: 'Flow Timing', fields: ['flow_duration', 'flow_iat_mean', 'flow_iat_std'] },
+  { label: 'Packet Counts', fields: ['packet_count', 'fwd_packets', 'bwd_packets', 'fwd_bwd_ratio'] },
+  { label: 'Byte Counts', fields: ['byte_count', 'fwd_bytes', 'bwd_bytes'] },
+  { label: 'Flow Rates', fields: ['flow_bytes_per_sec', 'flow_packets_per_sec'] },
+  { label: 'Packet Size', fields: ['avg_packet_size', 'fwd_packet_size_mean', 'bwd_packet_size_mean'] },
+  { label: 'TCP Flags', fields: ['syn_flag_count', 'ack_flag_count', 'rst_flag_count', 'fin_flag_count', 'psh_flag_count'] },
+  { label: 'Payload', fields: ['payload_length', 'payload_entropy'] },
+  { label: 'Headers', fields: ['fwd_header_length', 'bwd_header_length'] },
 ]
 
-// nanoid shim if not installed
 function genId() {
   return Math.random().toString(36).substring(2) + Date.now().toString(36)
 }
 
 export default function PredictPlayground() {
+  // ── State ──────────────────────────────────────────────────────────────────
   const [result, setResult] = useState<PredictionResponse | null>(null)
   const [submittedFeatures, setSubmittedFeatures] = useState<TrafficFeatures | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Flow Timing', 'TCP Flags']))
+  const [inputMode, setInputMode] = useState<'form' | 'json' | 'file'>('form')
+  const [jsonText, setJsonText] = useState('{}')
+  const [jsonError, setJsonError] = useState('')
   const { addPrediction } = useSettingsStore()
 
-  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<FeatureForm>({
+  const { register, handleSubmit, reset, setValue } = useForm<FeatureForm>({
     resolver: zodResolver(featureSchema),
   })
 
@@ -158,7 +137,7 @@ export default function PredictPlayground() {
     const features: TrafficFeatures = {}
     Object.entries(data).forEach(([k, v]) => {
       if (v !== undefined && v !== null && !isNaN(Number(v))) {
-        (features as any)[k] = Number(v)
+        ;(features as any)[k] = Number(v)
       }
     })
     mutate(features)
@@ -169,6 +148,7 @@ export default function PredictPlayground() {
     Object.entries(features).forEach(([k, v]) => {
       setValue(k as any, v)
     })
+    setInputMode('form')
   }
 
   const toggleGroup = (label: string) => {
@@ -180,6 +160,37 @@ export default function PredictPlayground() {
     })
   }
 
+  const handleJsonSubmit = () => {
+    try {
+      const features = JSON.parse(jsonText) as TrafficFeatures
+      setJsonError('')
+      mutate(features)
+    } catch {
+      setJsonError('Invalid JSON — check syntax and try again')
+    }
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target?.result as string)
+        const features = parsed as TrafficFeatures
+        setJsonText(JSON.stringify(features, null, 2))
+        setJsonError('')
+        mutate(features)
+      } catch {
+        setJsonError('Invalid JSON file — expected a single flow object')
+      }
+    }
+    reader.readAsText(file)
+    // Reset input so same file can be re-uploaded
+    e.target.value = ''
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
       <div>
@@ -190,9 +201,28 @@ export default function PredictPlayground() {
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        {/* Input form */}
+        {/* ── Left panel: input ────────────────────────────────────────────── */}
         <div className="space-y-4">
-          {/* Presets */}
+
+          {/* Mode tabs */}
+          <div className="panel p-1 flex gap-1">
+            {(['form', 'json', 'file'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => { setInputMode(mode); setJsonError('') }}
+                className={clsx(
+                  'flex-1 py-1.5 rounded font-mono text-xs transition-all duration-150',
+                  inputMode === mode
+                    ? 'bg-accent-cyan text-bg-base font-semibold'
+                    : 'text-text-secondary hover:text-text-primary'
+                )}
+              >
+                {mode === 'form' ? 'Form' : mode === 'json' ? 'Raw JSON' : 'Upload JSON'}
+              </button>
+            ))}
+          </div>
+
+          {/* Quick presets — always visible */}
           <div className="panel p-4">
             <div className="label-text mb-3">Quick Presets</div>
             <div className="flex gap-2">
@@ -200,8 +230,7 @@ export default function PredictPlayground() {
                 <button
                   key={key}
                   onClick={() => loadPreset(key as keyof typeof PRESETS)}
-                  className="flex-1 py-2 px-3 rounded border font-mono text-xs transition-all duration-150
-                    hover:opacity-90"
+                  className="flex-1 py-2 px-3 rounded border font-mono text-xs transition-all duration-150 hover:opacity-90"
                   style={{
                     borderColor: `${preset.color}40`,
                     color: preset.color,
@@ -214,88 +243,172 @@ export default function PredictPlayground() {
             </div>
           </div>
 
-          {/* Feature groups */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
-            {FEATURE_GROUPS.map((group) => {
-              const isExpanded = expandedGroups.has(group.label)
-              return (
-                <div key={group.label} className="panel overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(group.label)}
-                    className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-elevated transition-colors"
-                  >
-                    <span className="font-mono text-xs text-text-secondary uppercase tracking-widest">
-                      {group.label}
-                    </span>
-                    {isExpanded ? (
-                      <ChevronUp className="w-3.5 h-3.5 text-text-muted" />
-                    ) : (
-                      <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
-                    )}
-                  </button>
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="px-4 pb-4 grid grid-cols-2 gap-3">
-                          {group.fields.map((field) => (
-                            <div key={field}>
-                              <label className="label-text block mb-1">
-                                {field.replace(/_/g, ' ')}
-                              </label>
-                              <input
-                                {...register(field as any)}
-                                type="number"
-                                step="any"
-                                placeholder="0"
-                                className="input-field"
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )
-            })}
+          {/* ── Form mode ─────────────────────────────────────────────────── */}
+          {inputMode === 'form' && (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+              {FEATURE_GROUPS.map((group) => {
+                const isExpanded = expandedGroups.has(group.label)
+                return (
+                  <div key={group.label} className="panel overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group.label)}
+                      className="w-full flex items-center justify-between px-4 py-3 hover:bg-bg-elevated transition-colors"
+                    >
+                      <span className="font-mono text-xs text-text-secondary uppercase tracking-widest">
+                        {group.label}
+                      </span>
+                      {isExpanded
+                        ? <ChevronUp className="w-3.5 h-3.5 text-text-muted" />
+                        : <ChevronDown className="w-3.5 h-3.5 text-text-muted" />
+                      }
+                    </button>
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="px-4 pb-4 grid grid-cols-2 gap-3">
+                            {group.fields.map((field) => (
+                              <div key={field}>
+                                <label className="label-text block mb-1">
+                                  {field.replace(/_/g, ' ')}
+                                </label>
+                                <input
+                                  {...register(field as any)}
+                                  type="number"
+                                  step="any"
+                                  placeholder="0"
+                                  className="input-field"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                )
+              })}
 
-            <div className="flex gap-3">
-              <button
-                type="submit"
-                disabled={isPending}
-                className="flex-1 btn-primary flex items-center justify-center gap-2 py-3"
-              >
-                {isPending ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-bg-base border-t-transparent rounded-full animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-4 h-4" />
-                    Analyze Traffic
-                  </>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 btn-primary flex items-center justify-center gap-2 py-3"
+                >
+                  {isPending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-bg-base border-t-transparent rounded-full animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Analyze Traffic
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { reset(); setResult(null) }}
+                  className="btn-ghost flex items-center gap-2 px-4"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ── Raw JSON mode ─────────────────────────────────────────────── */}
+          {inputMode === 'json' && (
+            <div className="space-y-3">
+              <div className="panel p-4">
+                <div className="label-text mb-2">Paste JSON payload</div>
+                <textarea
+                  value={jsonText}
+                  onChange={(e) => { setJsonText(e.target.value); setJsonError('') }}
+                  className="input-field font-mono text-xs h-64 resize-none"
+                  placeholder='{"flow_duration": 3500, "packet_count": 42, ...}'
+                  spellCheck={false}
+                />
+                {jsonError && (
+                  <div className="text-accent-red font-mono text-xs mt-2">{jsonError}</div>
                 )}
-              </button>
-              <button
-                type="button"
-                onClick={() => { reset(); setResult(null) }}
-                className="btn-ghost flex items-center gap-2 px-4"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </button>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleJsonSubmit}
+                  disabled={isPending}
+                  className="flex-1 btn-primary flex items-center justify-center gap-2 py-3"
+                >
+                  {isPending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-bg-base border-t-transparent rounded-full animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Analyze JSON
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setJsonText('{}'); setJsonError(''); setResult(null) }}
+                  className="btn-ghost flex items-center gap-2 px-4"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </form>
+          )}
+
+          {/* ── File upload mode ──────────────────────────────────────────── */}
+          {inputMode === 'file' && (
+            <div className="space-y-3">
+              <div
+                className="panel p-10 flex flex-col items-center justify-center cursor-pointer
+                  hover:border-accent-cyan hover:border-opacity-40 transition-all"
+                onClick={() => document.getElementById('json-file-input')?.click()}
+              >
+                <Upload className="w-8 h-8 text-text-muted mb-3" />
+                <div className="font-mono text-sm text-text-secondary text-center">
+                  <span className="text-accent-cyan">Click to browse</span> a JSON file
+                </div>
+                <div className="font-mono text-xs text-text-muted mt-2 text-center">
+                  Single flow object with any of the 24 features
+                </div>
+                <div className="font-mono text-xs text-text-muted mt-1 text-center">
+                  Example: <span className="text-accent-cyan">{"{ \"flow_duration\": 3500, ... }"}</span>
+                </div>
+                <input
+                  id="json-file-input"
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </div>
+              {jsonError && (
+                <div className="text-accent-red font-mono text-xs px-1">{jsonError}</div>
+              )}
+              {isPending && (
+                <div className="flex items-center justify-center gap-2 font-mono text-xs text-text-muted">
+                  <div className="w-4 h-4 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin" />
+                  Analyzing uploaded file...
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Results panel */}
+        {/* ── Right panel: results ─────────────────────────────────────────── */}
         <div className="space-y-4">
           <AnimatePresence mode="wait">
             {result ? (
@@ -306,14 +419,14 @@ export default function PredictPlayground() {
                 exit={{ opacity: 0, scale: 0.97 }}
                 className="space-y-4"
               >
-                {/* Main gauge */}
                 <div className="panel p-6 flex flex-col items-center">
                   <ThreatGauge
                     score={result.threat_score}
                     severity={result.severity}
                     size="lg"
                   />
-                  <div className="mt-4 font-display text-xl font-bold text-center"
+                  <div
+                    className="mt-4 font-display text-xl font-bold text-center"
                     style={{ color: result.predicted_attack === 'BENIGN' ? '#00ff9f' : '#ff3b5c' }}
                   >
                     {result.predicted_attack}
@@ -325,7 +438,6 @@ export default function PredictPlayground() {
 
                 <PredictionCard prediction={result} />
 
-                {/* Explainability */}
                 {submittedFeatures && (
                   <div className="panel p-5">
                     <ExplainabilityPanel
@@ -349,7 +461,7 @@ export default function PredictPlayground() {
                   Enter features and click Analyze
                 </div>
                 <div className="font-mono text-xs text-text-muted mt-2">
-                  Or load a preset to get started
+                  Or load a preset to get started quickly
                 </div>
               </motion.div>
             )}

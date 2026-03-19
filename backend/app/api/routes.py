@@ -80,3 +80,14 @@ def stats(db: Session = Depends(get_db)):
                          attack_distribution={r[0]:r[1] for r in att_rows},
                          severity_counts={r[0]:r[1] for r in sev_rows},
                          anomaly_rate=round(anom/max(total,1),4))
+
+@router.delete("/stats/reset", tags=["system"])
+def reset_stats(db: Session = Depends(get_db)):
+    """Delete all prediction logs — resets dashboard to zero."""
+    deleted = db.query(PredictionLog).delete()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(500, f"Reset failed: {e}")
+    return {"deleted": deleted, "message": "All prediction logs cleared"}

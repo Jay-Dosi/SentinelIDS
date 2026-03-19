@@ -1,10 +1,10 @@
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   LayoutDashboard, Crosshair, Upload, Zap,
   BarChart3, Search, ChevronLeft, ChevronRight,
-  Shield, Activity, AlertCircle
+  Shield, Activity, AlertCircle, Trash2
 } from 'lucide-react'
 import { api } from '@/api/client'
 import { useSettingsStore } from '@/store/settings'
@@ -20,8 +20,9 @@ const NAV_ITEMS = [
 ]
 
 export default function Layout() {
-  const { sidebarCollapsed, toggleSidebar } = useSettingsStore()
+  const { sidebarCollapsed, toggleSidebar, clearPredictions } = useSettingsStore()
   const location = useLocation()
+  const queryClient = useQueryClient()
 
   const { data: health } = useQuery({
     queryKey: ['health'],
@@ -31,6 +32,32 @@ export default function Layout() {
   })
 
   const isOnline = health?.status === 'ok'
+
+  const handleReset = async () => {
+      if (!confirm(
+        'Reset everything?\n\nThis clears:\n• All prediction history\n• All dashboard charts\n• All backend stats\n\nYour trained AI models are NOT affected.'
+      )) return
+
+      // 1. Clear backend DB
+      try {
+        await fetch(`${(import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:8000'}/stats/reset`, {
+          method: 'DELETE',
+        })
+      } catch (e) {
+        console.warn('Backend reset failed:', e)
+      }
+
+      // 2. Clear local prediction history
+      clearPredictions()
+
+      // 3. Clear all React Query caches so charts go to zero
+      queryClient.clear()
+
+      // 4. Refetch fresh data
+        setTimeout(() => {
+        queryClient.invalidateQueries()
+        }, 300)
+  }
 
   return (
     <div className="flex h-screen bg-bg-base overflow-hidden">
@@ -137,7 +164,21 @@ export default function Layout() {
               {NAV_ITEMS.find(n => location.pathname.startsWith(n.path))?.label || 'SentinelIDS'}
             </span>
           </div>
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-3">
+            {/* Reset button */}
+            <button
+              onClick={handleReset}
+              className="flex items-center gap-1.5 font-mono text-xs text-text-muted
+                hover:text-accent-red transition-colors border border-bg-border
+                hover:border-accent-red px-2.5 py-1.5 rounded"
+              title="Reset prediction history and dashboard stats (models are unaffected)"
+            >
+              <Trash2 className="w-3 h-3" />
+              Reset Stats
+            </button>
+
+            {/* Status indicator */}
             {health && (
               <div className="flex items-center gap-2">
                 <div className={clsx(

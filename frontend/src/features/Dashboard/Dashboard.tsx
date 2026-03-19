@@ -4,13 +4,13 @@ import { Activity, Shield, AlertTriangle, TrendingUp, Zap, Eye } from 'lucide-re
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { api } from '@/api/client'
 import { useSettingsStore } from '@/store/settings'
-import { usePolling } from '@/hooks/usePolling'
 import TimelineChart from '@/components/TimelineChart/TimelineChart'
 import PredictionCard from '@/components/PredictionCard/PredictionCard'
 import { ATTACK_COLORS, SEVERITY_COLORS } from '@/config/api'
 import { clsx } from 'clsx'
 import { format, subMinutes } from 'date-fns'
 
+// ── No recursion — just a pure function ──────────────────────────────────────
 function generateTimelineData(predictions: any[]) {
   const now = new Date()
   return Array.from({ length: 20 }, (_, i) => {
@@ -47,9 +47,9 @@ const StatCard = ({ icon: Icon, label, value, sub, color }: any) => (
 )
 
 export default function Dashboard() {
-  const { predictions, addPrediction } = useSettingsStore()
+  const { predictions } = useSettingsStore()
 
-  const { data: stats, refetch: refetchStats } = useQuery({
+  const { data: stats } = useQuery({
     queryKey: ['stats'],
     queryFn: api.stats,
     refetchInterval: 10_000,
@@ -61,8 +61,8 @@ export default function Dashboard() {
   })
 
   const recentPredictions = predictions.slice(0, 8)
-  const attackPredictions = predictions.filter(p => p.predicted_attack !== 'BENIGN')
-  const criticalCount = predictions.filter(p => p.severity === 'critical').length
+  const attackPredictions = predictions.filter((p: any) => p.predicted_attack !== 'BENIGN')
+  const criticalCount = predictions.filter((p: any) => p.severity === 'critical').length
 
   const attackDistData = Object.entries(stats?.attack_distribution || {})
     .map(([name, value]) => ({
@@ -71,13 +71,6 @@ export default function Dashboard() {
       color: ATTACK_COLORS[name] || '#475569',
     }))
     .sort((a, b) => b.value - a.value)
-
-  const severityData = Object.entries(stats?.severity_counts || {})
-    .map(([name, value]) => ({
-      name,
-      value: value as number,
-      color: SEVERITY_COLORS[name as keyof typeof SEVERITY_COLORS] || '#475569',
-    }))
 
   const timelineData = generateTimelineData(predictions)
 
@@ -117,7 +110,9 @@ export default function Dashboard() {
           icon={AlertTriangle}
           label="Threats Detected"
           value={attackPredictions.length.toLocaleString()}
-          sub={`${predictions.length > 0 ? ((attackPredictions.length / predictions.length) * 100).toFixed(1) : 0}% attack rate`}
+          sub={`${predictions.length > 0
+            ? ((attackPredictions.length / predictions.length) * 100).toFixed(1)
+            : 0}% attack rate`}
           color="#ff3b5c"
         />
         <StatCard
@@ -223,7 +218,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div className="space-y-2">
-            {recentPredictions.map((p) => (
+            {recentPredictions.map((p: any) => (
               <PredictionCard key={p.id} prediction={p} compact />
             ))}
           </div>

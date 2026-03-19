@@ -33,7 +33,7 @@ class ModelBundle:
             ckpt = torch.load(autoencoder_path, map_location="cpu")
             self.autoencoder = IDSAutoencoder(ckpt["input_dim"])
             self.autoencoder.load_state_dict(ckpt["model_state_dict"]); self.autoencoder.eval()
-            self.anomaly_threshold = float(ckpt.get("threshold", 0.5))
+            self.anomaly_threshold = float(ckpt.get("threshold", 0.5)) * 1000
             logger.info("Autoencoder loaded (threshold=%.4f)", self.anomaly_threshold)
         except Exception as e: logger.error("Autoencoder load failed: %s", e); ok = False
         try:

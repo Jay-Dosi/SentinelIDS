@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Download, Filter, ChevronRight } from 'lucide-react'
 import { useSettingsStore } from '@/store/settings'
-import PredictionCard from '@/components/PredictionCard/PredictionCard'
 import ExplainabilityPanel from '@/components/ExplainabilityPanel/ExplainabilityPanel'
 import ThreatGauge from '@/components/ThreatGauge/ThreatGauge'
 import type { PredictionRecord } from '@/types'
@@ -16,9 +15,9 @@ export default function Forensics() {
   const [filterSeverity, setFilterSeverity] = useState<string>('all')
   const [filterAttack, setFilterAttack] = useState<string>('all')
 
-  const attackTypes = Array.from(new Set(predictions.map(p => p.predicted_attack))).sort()
+  const attackTypes = Array.from(new Set(predictions.map((p: PredictionRecord) => p.predicted_attack))).sort()
 
-  const filtered = predictions.filter(p => {
+  const filtered = predictions.filter((p: PredictionRecord) => {
     if (filterSeverity !== 'all' && p.severity !== filterSeverity) return false
     if (filterAttack !== 'all' && p.predicted_attack !== filterAttack) return false
     if (search) {
@@ -107,7 +106,7 @@ export default function Forensics() {
             className="input-field w-40 py-1.5 text-xs"
           >
             <option value="all">All Types</option>
-            {attackTypes.map(t => (
+            {attackTypes.map((t: string) => (
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
@@ -130,8 +129,8 @@ export default function Forensics() {
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {/* Prediction list */}
-          <div className="space-y-2">
-            {filtered.map((p) => (
+          <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-auto pr-1">
+            {filtered.map((p: PredictionRecord) => (
               <motion.div
                 key={p.id}
                 initial={{ opacity: 0 }}
@@ -191,7 +190,7 @@ export default function Forensics() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
-                className="space-y-4"
+                className="space-y-4 max-h-[calc(100vh-280px)] overflow-auto pr-1"
               >
                 {/* Header */}
                 <div className="panel p-4 flex items-center justify-between">
@@ -263,7 +262,7 @@ export default function Forensics() {
                               {typeof v === 'number' ? (v as number).toLocaleString() : String(v)}
                             </span>
                           </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 )}
