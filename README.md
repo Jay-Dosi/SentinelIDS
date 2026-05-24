@@ -55,11 +55,11 @@ backend/datasets/
 
 | Metric | Score |
 |---|---|
-| Overall Accuracy | 93.4% |
-| BENIGN F1 | 0.97 |
-| DDOS F1 | 0.96 |
-| BRUTE_FORCE F1 | 0.94 |
-| Training Data | 9.6M flows (4 datasets) |
+| Overall Accuracy | 96.72% |
+| BENIGN F1 | 0.99 |
+| DDOS F1 | 0.97 |
+| BRUTE_FORCE F1 | 0.46 |
+| Training Data | 14.5M flows (4 datasets) |
 | Attack Classes | 17 |
 
 ## API Endpoints

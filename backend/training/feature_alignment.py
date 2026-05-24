@@ -192,10 +192,10 @@ def align_features(df: pd.DataFrame) -> pd.DataFrame:
     aligned = {}
     for feat in UNIFIED_FEATURES:
         if feat in df.columns:
-            aligned[feat] = pd.to_numeric(df[feat], errors="coerce").fillna(0.0)
+            aligned[feat] = pd.to_numeric(df[feat], errors="coerce", downcast="float").fillna(0.0)
         else:
             logger.warning("Alignment: missing '%s' — zeroing", feat)
-            aligned[feat] = pd.Series(0.0, index=df.index)
+            aligned[feat] = pd.Series(0.0, index=df.index, dtype="float32")
     result = pd.DataFrame(aligned)
     for col in [LABEL_COLUMN, "_source"]:
         if col in df.columns:
@@ -210,8 +210,6 @@ def encode_labels(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, int]]:
 
     Returns (modified DataFrame, label→index mapping).
     """
-    df = df.copy()
-
     # Step 1: normalise
     before = df[LABEL_COLUMN].nunique()
     df[LABEL_COLUMN] = df[LABEL_COLUMN].apply(_normalise_label)

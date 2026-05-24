@@ -46,16 +46,16 @@
     "WEB_XSS": 15,
     "WORM": 16
   },
-  "anomaly_threshold": 0.003186437906697391,
+  "anomaly_threshold": 0.001360825722804293,
   "version": "1.0.0",
   "classifier_metrics": {
-    "accuracy": 0.934097468948312
+    "accuracy": 0.967236968571525
   },
   "autoencoder_metrics": {
-    "tpr": 0.3642924411400248,
-    "fpr": 0.049634557233143056,
-    "auc_roc": 0.8024194701539563,
-    "threshold": 0.003186437906697391
+    "tpr": 0.5303236498868169,
+    "fpr": 0.04969586249044611,
+    "auc_roc": 0.8948017730544738,
+    "threshold": 0.001360825722804293
   },
   "training_config": {
     "epochs": 60,

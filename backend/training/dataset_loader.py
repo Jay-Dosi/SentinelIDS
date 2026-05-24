@@ -70,13 +70,14 @@ def _fill(df: pd.DataFrame) -> pd.DataFrame:
             df[col] = df[col].fillna(0.0 if pd.isna(m) else m)
     return df
 
-def _read_tabular_file(path: Path) -> pd.DataFrame:
+def _read_tabular_file(path: Path):
     suffix = path.suffix.lower()
     if suffix == ".csv":
-        return pd.read_csv(path, low_memory=False)
-    if suffix == ".parquet":
-        return pd.read_parquet(path)
-    raise ValueError(f"Unsupported file type: {path.name}")
+        yield from pd.read_csv(path, low_memory=False, chunksize=250000)
+    elif suffix == ".parquet":
+        yield pd.read_parquet(path)
+    else:
+        raise ValueError(f"Unsupported file type: {path.name}")
 
 def _list_dataset_files(path: Path) -> list[Path]:
     files = []
@@ -118,18 +119,25 @@ def load_cicids(path: Path, year: str = "2017") -> pd.DataFrame:
         logger.warning("No files in %s", path)
         return pd.DataFrame()
     frames = []
+    
+    keep_cols = set(UNIFIED_FEATURES) | {LABEL_COLUMN, "fwd_bytes", "bwd_bytes"}
+    
     for f in files:
         try:
-            chunk = _read_tabular_file(f)
-            chunk.columns = chunk.columns.str.strip()
-            frames.append(chunk)
+            for chunk in _read_tabular_file(f):
+                chunk.columns = chunk.columns.str.strip()
+                chunk = chunk.rename(columns={k: v for k, v in CICIDS_MAP.items() if k in chunk.columns})
+                chunk = chunk.loc[:, ~chunk.columns.duplicated(keep="first")]
+                
+                existing = [c for c in chunk.columns if c in keep_cols]
+                frames.append(chunk[existing])
         except Exception as e:
             logger.error("Read error %s: %s", f, e)
+            
     if not frames:
         return pd.DataFrame()
+        
     raw = pd.concat(frames, ignore_index=True)
-    raw.columns = raw.columns.str.strip()
-    raw = raw.rename(columns={k: v for k, v in CICIDS_MAP.items() if k in raw.columns})
 
     # Derived columns — use pd.Series fallback so .fillna() always works
     _fwd_b = pd.to_numeric(
@@ -155,17 +163,7 @@ def load_unsw_nb15(path: Path) -> pd.DataFrame:
     if not files:
         logger.warning("No files in %s", path)
         return pd.DataFrame()
-    frames = []
-    for f in files:
-        try:
-            chunk = _read_tabular_file(f)
-            chunk.columns = chunk.columns.str.strip().str.lower()
-            frames.append(chunk)
-        except Exception as e:
-            logger.error("Read error %s: %s", f, e)
-    if not frames:
-        return pd.DataFrame()
-    raw = pd.concat(frames, ignore_index=True)
+        
     rename = {
         "dur":        "flow_duration",
         "rate":       "flow_bytes_per_sec",
@@ -175,7 +173,24 @@ def load_unsw_nb15(path: Path) -> pd.DataFrame:
         "label":      LABEL_COLUMN,
         "attack_cat": "_attack_cat",
     }
-    raw = raw.rename(columns={k: v for k, v in rename.items() if k in raw.columns})
+    keep_cols = set(UNIFIED_FEATURES) | {LABEL_COLUMN, "_attack_cat", "spkts", "dpkts", "sbytes", "dbytes", "proto"}
+    
+    frames = []
+    for f in files:
+        try:
+            for chunk in _read_tabular_file(f):
+                chunk.columns = chunk.columns.str.strip().str.lower()
+                chunk = chunk.rename(columns={k: v for k, v in rename.items() if k in chunk.columns})
+                chunk = chunk.loc[:, ~chunk.columns.duplicated(keep="first")]
+                
+                existing = [c for c in chunk.columns if c in keep_cols]
+                frames.append(chunk[existing])
+        except Exception as e:
+            logger.error("Read error %s: %s", f, e)
+            
+    if not frames:
+        return pd.DataFrame()
+    raw = pd.concat(frames, ignore_index=True)
     if "_attack_cat" in raw.columns and LABEL_COLUMN in raw.columns:
         raw[LABEL_COLUMN] = raw.apply(
             lambda r: str(r["_attack_cat"]).strip() if r[LABEL_COLUMN] == 1 else "BENIGN",
@@ -258,9 +273,9 @@ def _build_unified(raw: pd.DataFrame, source: str) -> pd.DataFrame:
     result = {}
     for feat in UNIFIED_FEATURES:
         if feat in raw.columns:
-            result[feat] = _safe_clip(pd.to_numeric(raw[feat], errors="coerce"))
+            result[feat] = _safe_clip(pd.to_numeric(raw[feat], errors="coerce", downcast="float"))
         else:
-            result[feat] = pd.Series(0.0, index=raw.index)
+            result[feat] = pd.Series(0.0, index=raw.index, dtype="float32")
 
     # Derived ratios (computed after raw mapping)
     fwd = result["fwd_packets"].replace(0, np.nan)
