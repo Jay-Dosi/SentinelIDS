@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging, time
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from app.config import settings
 from app.core.database import init_db
 from app.core.logging import configure_logging
@@ -50,5 +50,9 @@ async def shutdown(): logger.info("Shutting down %s", settings.app_name)
 async def exc_handler(request: Request, exc: Exception):
     logger.error("Unhandled: %s  path=%s", exc, request.url.path)
     return JSONResponse(status_code=500, content={"detail":"Internal server error","error":str(exc)})
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
 
 app.include_router(router)
